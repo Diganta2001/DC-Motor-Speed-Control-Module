@@ -1,0 +1,95 @@
+#include <LiquidCrystal.h>
+#include <Adafruit_LiquidCrystal.h>
+// Motor control pins
+#define enA 9
+#define in1 6
+#define in2 7
+#define button 4
+// LCD pin connections
+const int rs = 8; // Register Select pin
+const int en = 5; // Enable pin
+const int d4 = 3; // Data pin 4
+const int d5 = 2; // Data pin 5
+const int d6 = 11; // Data pin 6
+const int d7 = 10; // Data pin 7
+int rotDirection = 0;
+bool pressed = false;
+// Initialize LCD with pin configurations
+LiquidCrystal lcd(rs, en, d4, d5, d6, d7);
+void setup() {
+ Serial.begin(9600);
+ pinMode(enA, OUTPUT);
+ pinMode(in1, OUTPUT);
+ pinMode(in2, OUTPUT);
+ pinMode(button, INPUT);
+ // Set initial rotation direction
+ digitalWrite(in1, LOW);
+ digitalWrite(in2, HIGH);
+ // Initialize LCD
+ lcd.begin(16, 2); // 16 columns and 2 rows
+ lcd.print("Motor Control");
+}
+void loop() {
+ int potValue = analogRead(A0); // Read 
+potentiometer value
+ int pwmOutput = map(potValue, 0, 1023, 0 , 
+255); // Map the potentiometer value from 0 to 
+255
+ 
+
+analogWrite(enA, pwmOutput); // Send 
+PWM signal to L298N Enable pin
+ // Button debounce
+ int reading = digitalRead(button);
+ static int lastButtonState = LOW;
+ static unsigned long lastDebounceTime = 
+0;
+ unsigned long debounceDelay = 50;
+ if (reading != lastButtonState) {
+ lastDebounceTime = millis();
+ }
+ if ((millis() - lastDebounceTime) > 
+debounceDelay) {
+ if (reading != pressed) {
+ pressed = reading;
+ 
+ if (pressed == HIGH) {
+ // Button is pressed, change rotation 
+direction
+ 
+if (rotDirection == 0) {
+ digitalWrite(in1, HIGH);
+ digitalWrite(in2, LOW);
+ rotDirection = 1;
+ } else {
+ digitalWrite(in1, LOW);
+ digitalWrite(in2, HIGH);
+ rotDirection = 0;
+ }
+ }
+ }
+ }
+ lastButtonState = reading;
+ // Update LCD with motor status
+ lcd.setCursor(0, 1);
+ lcd.print("Direction: ");
+ Serial.print("Direction: ");
+ 
+
+lcd.print(rotDirection == 1 ? "Clockwise 
+" : "Counterclockwise");
+ Serial.println(rotDirection == 1 ? 
+"Clockwise " : "Counterclockwise");
+ delay(1500);
+ 
+ lcd.setCursor(0, 0);
+ lcd.print("Speed: ");
+ Serial.print("Speed: ");
+ lcd.print(pwmOutput);
+ Serial.println(pwmOutput);
+ delay(1500);
+ // Add any additional functionality here
+ 
+ // Delay for stability
+ delay(20);
+}
